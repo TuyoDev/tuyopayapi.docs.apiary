@@ -1,0 +1,132 @@
+FORMAT: 1A
+HOST: https://test.tuyoanalytics.com/
+
+# Documentación Tuyo Pay API
+
+El presente documento explica y muestra ejemplos para la correcta utilización de la API de integración de Tuyo Pay.
+
+Para poder realizar transacciones a través de integración deberá consultar los endpoints que se mostrarán en esta referencia.
+
+A continuación mostramos los conceptos necesarios para poder efectuar una integración exitosa.
+
+### API Key
+
+Esto nos servirá de llave para obtener los insumos necesarios para efectuar la transacción y realizar el pago. 
+Los clientes pueden solicitar que se les brinde un API Key para producción y otra para testing.
+
+### Timestamp
+
+El timestamp como URI Param en cada petición nos servirá a verificar que el request se esta haciendo justo en el momento en que se consulta la API.
+En JS se puede obtener:
+```js
+const timestamp = new Date().getTime();
+
+// Ejemplo de uso en la construcción de la url del request
+const request = `https://${API_URL}?timestamp=${timestamp}`;
+```
+
+### Códigos de Respuesta
+
+Ayudan a clasificar las peticiones en exitosos o con error. A continuación se muestran los posibles tipos:
+
+| Código  | Tipo      | Descripción                        |
+|:--- | --------- | ---------------------------------- |
+| 200   | Exitosa    | La petición fue realizada exitosamente                  |
+| 400   | Error | Error realizar la acción en el servidor |
+| 401   | Error | Error al autorizar la petición |
+| 403   | Error | La acción no está permitida |
+| 404   | Error | El recurso o el endpoint no esta disponible |
+| 409   | Error | Error en el envío de datos |
+| 500   | Error | Error interno del servidor |
+
+## Pagos [/api]
+
+### Crear pago [POST /api/make_payment{?timestamp}]
+
+Estructura del body
+
+| Requerido | Campo               | Tipo de Dato | Descripción                              |
+| :-------: | ------------------- | :----------- | :--------------------------------------- |
+|    si     | amount              | Double       | Monto total del pago |
+|    si     | phone               | String       | Número de teléfono del cliente           |
+|    no     | concept             | String       | Concepto del recibo                      |
+|    si     | store               | Double       | Nombre del comercio                      |
+|    si     | firstname           | String       | Nombre del cliente                       |
+|    si     | lastname            | String       | Apellido del cliente                     |
+|    si     | email               | String       | Email del cliente                        |
+|    si     | transactions        | String       | Array de transacciones encriptado        |
+
+
+Estructura del array `transactions`:
+
+| Requerido | Campo               | Tipo de Dato | Descripción                               |
+| :-------: | ------------------- | :----------- | :---------------------------------------- |
+|    si     | number              | String       | Numero de la tarjeta                      |
+|    si     | amount              | String       | Monto a pagar                             |
+|    si     | type                | String       | Tipo de transacción (tarjeta o puntos)    |
+|    si     | cvv                 | String       | Código CVV                                |
+|    si     | exp                 | String       | Fecha de expiración de la tarjeta (MM/YY) |
+
+Ejemplo:
+
+```js
+[
+    {
+        "number": "4111111111111111",
+        "amount": "000000001000",
+        "type": "CARD",
+        "cvv": "123",
+        "exp": "09/22"
+    },
+    {
+        "number": "4111111111111111",
+        "amount": "000000001000",
+        "type": "POINTS",
+        "cvv": "123",
+        "exp": "09/22"
+    }
+]
+```
+
++ Parameters
+    + timestamp: `1656461076` (required, number) - Tiempo actual en que se ejecuta el request
+
++ Request (application/json)
+    + Body
+
+            {
+                "amount": 20.00,
+                "phone": 12345678,
+                "concept": "PAGO",
+                "store": "Tuyoapp",
+                "firstname": "Juan",
+                "lastname": "Perez",
+                "email": "jprz@yopmail.com",
+                "transactions": "53616c7465645f5fe40e863810179c3dca0721a1eeed27b2d1feedf3529ef33da7914da18d4b6c0a06e6c7c3f7eaf16bc304d7cde974bdfd2872cc1a88d40caa21d8b312e4652379854292bbece1cb11b12cf23d956eb234deb523b06a9d4ba49ab3bb3dd597041c8037850560e9ed701e6fd500bc3f4117d6406fa138e3187ac804a289b90c6c0b4aa2b20f14f3846e458bb36a03f23eefc4ebc4f2275dd321016941a6f3f8adf19a260eb8663a3e2969aaae6822b9eabfa3ce2bc71904dff0ecb822181ddfa24ee1d4d1de02ec4401"
+            }
+
+    + Headers
+
+            x-api-token: {API_KEY}
+
++ Response 200 (application/json)
+    + Body
+
+            {
+                "status": 200,
+                "response": "Pago realizado satisfactoriamente",
+            }
++ Response 400 (application/json)
+    + Body
+
+            {
+                "status": 400,
+                "response": "Mensaje del error",
+            }
++ Response 401 (application/json)
+    + Body
+
+            {
+                "status": 401,
+                "response": "Unauthorized",
+            }
